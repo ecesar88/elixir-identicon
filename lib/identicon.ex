@@ -23,22 +23,8 @@ defmodule Identicon do
     |> build_grid
     |> filter_odd_squares
     |> build_pixel_map
-  end
-
-  def build_pixel_map(%Identicon.Image{grid: grid} = image) do
-    pixel_map =
-      grid
-      |> Enum.map(fn {_code, idx} ->
-        horizontal = rem(idx, 5) * 50
-        vertical = div(idx, 5) * 50
-
-        top_left = {horizontal, vertical}
-        bottom_right = {horizontal + 50, vertical + 50}
-
-        {top_left, bottom_right}
-      end)
-
-    %Identicon.Image{image | pixel_map: pixel_map}
+    |> draw_image
+    |> save_image(input)
   end
 
   def hash_input(input) do
@@ -77,5 +63,37 @@ defmodule Identicon do
     end)
 
     %Identicon.Image{image | grid: grid}
+  end
+
+  def build_pixel_map(%Identicon.Image{grid: grid} = image) do
+    pixel_map =
+      grid
+      |> Enum.map(fn {_code, idx} ->
+        horizontal = rem(idx, 5) * 50
+        vertical = div(idx, 5) * 50
+
+        top_left = {horizontal, vertical}
+        bottom_right = {horizontal + 50, vertical + 50}
+
+        {top_left, bottom_right}
+      end)
+
+    %Identicon.Image{image | pixel_map: pixel_map}
+  end
+
+  def draw_image(%Identicon.Image{color: color, pixel_map: pixel_map}) do
+    image = :egd.create(250, 250)
+    fill = :egd.color(color)
+
+    pixel_map
+    |> Enum.each(fn {start, stop} ->
+      :egd.filledRectangle(image, start, stop, fill)
+    end)
+
+    :egd.render(image)
+  end
+
+  def save_image(image, input) do
+    File.write("#{input}.png", image)
   end
 end
